@@ -3,22 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ศรีแก้ว-คลังมะขาม (GitHub Edition)</title>
+  <title>ศรีแก้ว-คลังมะขาม</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
-    body { background-color: #f4f7f6; padding-bottom: 50px; }
-    .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 9999; justify-content: center; align-items: center; }
+    body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding-bottom: 50px; }
+    .container { max-width: 600px; }
+    .card { border: none; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .nav-pills .nav-link { border-radius: 10px; color: #555; }
+    .nav-pills .nav-link.active { background-color: #198754; }
+    #reader-in, #reader-out { width: 100%; border-radius: 10px; overflow: hidden; margin-top: 10px; }
+    .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; }
+    .table-container { max-height: 300px; overflow-y: auto; }
   </style>
 </head>
 <body>
 
-<div id="loader" class="loading-overlay"><div class="spinner-border text-primary"></div></div>
+<div id="loader" class="loading-overlay">
+    <div class="spinner-border text-success mb-2"></div>
+    <div>กำลังประมวลผล...</div>
+</div>
 
 <div class="container mt-4">
-  <h2 class="text-center mb-4 text-success">ศรีแก้ว-คลังมะขาม</h2>
+  <div class="text-center mb-4">
+    <h2 class="text-success fw-bold">ศรีแก้ว-คลังมะขาม</h2>
+    <span class="badge bg-secondary">GitHub Pages Edition</span>
+  </div>
 
-  <ul class="nav nav-tabs nav-justified mb-4" id="mainTab">
+  <ul class="nav nav-pills nav-justified mb-4 p-1 bg-white card shadow-sm" id="mainTab">
     <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#in">รับเข้า</button></li>
     <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#out">เบิกออก</button></li>
     <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#stock" onclick="loadStock()">Stock</button></li>
@@ -26,39 +38,85 @@
 
   <div class="tab-content">
     <div class="tab-pane fade show active" id="in">
-        <div class="mb-3"><label>ผู้บันทึก</label><select id="userIn" class="form-select user-ddl"></select></div>
-        <div class="mb-3"><label>ชั้นจัดเก็บ</label><select id="locIn" class="form-select storage-ddl"></select></div>
-        <button class="btn btn-primary w-100 mb-3" onclick="startScanner('in')">📷 สแกน QR Code</button>
+      <div class="card p-3 mb-3">
+        <div class="mb-3">
+            <label class="form-label fw-bold">ผู้บันทึก</label>
+            <select id="userIn" class="form-select user-ddl"></select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-bold">ชั้นจัดเก็บ</label>
+            <select id="locIn" class="form-select storage-ddl"></select>
+        </div>
+        <button class="btn btn-dark w-100 py-2 mb-2" onclick="startScanner('in')">📷 สแกน QR Code (รับเข้า)</button>
         <div id="reader-in"></div>
-        <table class="table mt-3"><tbody id="listIn"></tbody></table>
-        <button class="btn btn-success w-100" onclick="submitData('in')">บันทึกรับเข้า</button>
+      </div>
+      
+      <div class="card p-3">
+        <h6 class="fw-bold border-bottom pb-2">รายการรอจัดเก็บ</h6>
+        <div class="table-container">
+            <table class="table align-middle">
+                <thead><tr><th>รายการ</th><th width="80px">ลบ</th></tr></thead>
+                <tbody id="listIn"></tbody>
+            </table>
+        </div>
+        <button class="btn btn-success w-100 mt-2 py-2" onclick="submitData('in')">ยืนยันบันทึกรับเข้า</button>
+      </div>
     </div>
 
     <div class="tab-pane fade" id="out">
-        <div class="mb-3"><label>ผู้บันทึก</label><select id="userOut" class="form-select user-ddl"></select></div>
-        <button class="btn btn-primary w-100 mb-3" onclick="startScanner('out')">📷 สแกน QR Code</button>
+      <div class="card p-3 mb-3">
+        <div class="mb-3">
+            <label class="form-label fw-bold">ผู้เบิก</label>
+            <select id="userOut" class="form-select user-ddl"></select>
+        </div>
+        <button class="btn btn-dark w-100 py-2 mb-2" onclick="startScanner('out')">📷 สแกน QR Code (เบิกออก)</button>
         <div id="reader-out"></div>
-        <table class="table mt-3"><tbody id="listOut"></tbody></table>
-        <button class="btn btn-danger w-100" onclick="submitData('out')">บันทึกเบิกออก</button>
+      </div>
+
+      <div class="card p-3">
+        <h6 class="fw-bold border-bottom pb-2 text-danger">รายการที่ต้องการเบิก</h6>
+        <div class="table-container">
+            <table class="table align-middle">
+                <thead><tr><th>รายการ</th><th width="80px">ลบ</th></tr></thead>
+                <tbody id="listOut"></tbody>
+            </table>
+        </div>
+        <button class="btn btn-danger w-100 mt-2 py-2" onclick="submitData('out')">ยืนยันบันทึกเบิกออก</button>
+      </div>
     </div>
 
     <div class="tab-pane fade" id="stock">
-        <select id="typeFilter" class="form-select mb-3 type-ddl" onchange="loadStock()"></select>
-        <table class="table table-striped">
-            <thead class="table-dark"><tr><th>โกดัง</th><th>ตำแหน่ง</th><th>เหลือ</th></tr></thead>
-            <tbody id="detailBody"></tbody>
+      <div class="card p-3 mb-3">
+        <h6 class="fw-bold mb-3">สรุปคงเหลือรวม</h6>
+        <table class="table table-sm">
+            <thead class="table-light"><tr><th>รายการ</th><th>คงเหลือ</th></tr></thead>
+            <tbody id="summaryBody"></tbody>
         </table>
+      </div>
+
+      <div class="card p-3">
+        <h6 class="fw-bold mb-3">ตรวจสอบตำแหน่งจัดเก็บ</h6>
+        <select id="typeFilter" class="form-select mb-3 type-ddl" onchange="loadStock()"></select>
+        <div class="table-container">
+            <table class="table table-striped table-sm">
+                <thead class="table-dark"><tr><th>โกดัง</th><th>ตำแหน่ง</th><th>เหลือ</th></tr></thead>
+                <tbody id="detailBody"></tbody>
+            </table>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
-// *** เปลี่ยน URL นี้เป็น Web App URL ของคุณ ***
+// *** ใส่ URL ของ Web App (Google Apps Script) ที่นี่ ***
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz4veD_Dk4s52wh8up5a2GaUpfug90WJEYNcZVWZANTbJSCblXGd0HepuUtCwyroHZFKQ/exec";
 
 let itemsIn = [];
 let itemsOut = [];
+let html5QrCode;
 
+// โหลดข้อมูลตัวเลือกเมื่อเปิดหน้าเว็บ
 window.onload = () => {
   toggleLoader(true);
   fetch(`${WEB_APP_URL}?action=getDropdown`)
@@ -66,7 +124,11 @@ window.onload = () => {
     .then(data => {
       fillSelect('.user-ddl', data.users);
       fillSelect('.storage-ddl', data.storage);
-      fillSelect('.type-ddl', data.types, "ทั้งหมด");
+      fillSelect('.type-ddl', data.types, "ทุกชนิดมะขาม");
+      toggleLoader(false);
+    })
+    .catch(err => {
+      console.error(err);
       toggleLoader(false);
     });
 };
@@ -79,56 +141,120 @@ function fillSelect(selector, data, firstOption) {
   });
 }
 
-async function addItem(mode, qr) {
-    const list = mode === 'in' ? itemsIn : itemsOut;
-    if (list.includes(qr)) return alert("มีในรายการแล้ว");
+// ระบบสแกน QR Code
+function startScanner(mode) {
+  const elementId = mode === 'in' ? "reader-in" : "reader-out";
+  if (html5QrCode) {
+    html5QrCode.stop().then(() => initScanner(mode, elementId)).catch(() => initScanner(mode, elementId));
+  } else {
+    initScanner(mode, elementId);
+  }
+}
 
-    toggleLoader(true);
+function initScanner(mode, elementId) {
+  html5QrCode = new Html5Qrcode(elementId);
+  html5QrCode.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: { width: 250, height: 250 } },
+    (qrText) => {
+      addItem(mode, qrText);
+      html5QrCode.stop();
+      if (navigator.vibrate) navigator.vibrate(100);
+    }
+  ).catch(err => alert("ไม่สามารถเข้าถึงกล้องได้: " + err));
+}
+
+// เพิ่มรายการลงตารางพร้อมเช็คเงื่อนไข
+async function addItem(mode, qr) {
+  const list = mode === 'in' ? itemsIn : itemsOut;
+  if (list.includes(qr)) return alert("มีรหัสนี้ในรายการแล้ว");
+
+  toggleLoader(true);
+  try {
     const res = await fetch(`${WEB_APP_URL}?action=checkStock&qr=${qr}`);
     const exists = await res.json();
     toggleLoader(false);
 
-    if (mode === 'in' && exists) alert("มีอยู่ใน Stock แล้ว");
-    if (mode === 'out' && !exists) alert("ไม่มีใน Stock");
-
+    if (mode === 'in' && exists) {
+        alert("แจ้งเตือน: สินค้านี้มีอยู่ในคลังแล้ว");
+    } else if (mode === 'out' && !exists) {
+        alert("ข้อผิดพลาด: ไม่พบสินค้านี้ในคลัง (ไม่สามารถเบิกได้)");
+        return;
+    }
+    
     list.push(qr);
     renderTable(mode);
-}
-
-async function submitData(mode) {
-    const user = document.getElementById(mode === 'in' ? 'userIn' : 'userOut').value;
-    const loc = mode === 'in' ? document.getElementById('locIn').value : '';
-    const items = mode === 'in' ? itemsIn : itemsOut;
-
-    if (!user || items.length === 0) return alert("ข้อมูลไม่ครบ");
-
-    toggleLoader(true);
-    await fetch(WEB_APP_URL, {
-        method: 'POST',
-        body: JSON.stringify({ mode, user, location: loc, items })
-    });
+  } catch (e) {
     toggleLoader(false);
+    alert("การเชื่อมต่อขัดข้อง");
+  }
+}
+
+function renderTable(mode) {
+  const list = mode === 'in' ? itemsIn : itemsOut;
+  const tbody = document.getElementById(mode === 'in' ? 'listIn' : 'listOut');
+  tbody.innerHTML = list.map((item, index) => `
+    <tr>
+      <td>${item}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="removeItem('${mode}', ${index})">ลบ</button></td>
+    </tr>
+  `).join('');
+}
+
+function removeItem(mode, index) {
+  if (mode === 'in') itemsIn.splice(index, 1);
+  else itemsOut.splice(index, 1);
+  renderTable(mode);
+}
+
+// บันทึกข้อมูลไปยัง Google Sheets
+async function submitData(mode) {
+  const user = document.getElementById(mode === 'in' ? 'userIn' : 'userOut').value;
+  const loc = mode === 'in' ? document.getElementById('locIn').value : '';
+  const items = mode === 'in' ? itemsIn : itemsOut;
+
+  if (!user) return alert("กรุณาเลือกชื่อผู้บันทึก");
+  if (items.length === 0) return alert("กรุณาสแกนรายการอย่างน้อย 1 รายการ");
+
+  toggleLoader(true);
+  try {
+    const res = await fetch(WEB_APP_URL, {
+      method: 'POST',
+      mode: 'no-cors', // สำคัญ: เพื่อข้าม CORS ของ Google
+      cache: 'no-cache',
+      body: JSON.stringify({ mode, user, location: loc, items })
+    });
     
-    alert("บันทึกสำเร็จ");
-    if (mode === 'in') itemsIn = []; else itemsOut = [];
-    renderTable(mode);
+    // เนื่องจากใช้ no-cors จะอ่าน response ไม่ได้ แต่ถ้าไม่ error แสดงว่าส่งถึง
+    setTimeout(() => {
+        toggleLoader(false);
+        alert("ส่งคำขอบันทึกข้อมูลเรียบร้อยแล้ว");
+        if (mode === 'in') itemsIn = []; else itemsOut = [];
+        renderTable(mode);
+    }, 1500);
+    
+  } catch (e) {
+    toggleLoader(false);
+    alert("เกิดข้อผิดพลาดในการส่งข้อมูล");
+  }
 }
 
+// โหลดข้อมูลหน้า Stock
 function loadStock() {
-    const type = document.getElementById('typeFilter').value;
-    fetch(`${WEB_APP_URL}?action=getStock&type=${type}`)
-        .then(res => res.json())
-        .then(data => {
-            document.getElementById('detailBody').innerHTML = data.details.map(r => 
-                `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
-        });
+  const filter = document.getElementById('typeFilter').value;
+  fetch(`${WEB_APP_URL}?action=getStock&type=${encodeURIComponent(filter)}`)
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById('summaryBody').innerHTML = data.summary.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('');
+      document.getElementById('detailBody').innerHTML = data.details.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
+    });
 }
 
-function toggleLoader(show) { document.getElementById('loader').style.display = show ? 'flex' : 'none'; }
-function renderTable(mode) { /* โค้ดสร้างตารางเหมือนเดิม */ }
-function startScanner(mode) { /* โค้ดสแกนเนอร์เหมือนเดิม */ }
-
+function toggleLoader(show) {
+    document.getElementById('loader').style.display = show ? 'flex' : 'none';
+}
 </script>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

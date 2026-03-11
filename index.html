@@ -8,99 +8,111 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        .active-tab { border-bottom: 4px solid #059669; color: #059669; font-weight: 800; }
+        /* ปรับขนาดตัวอักษรภาพรวมขึ้น 20% (จาก 16px เป็นประมาณ 19px) */
+        html { font-size: 120%; }
+        
+        /* ยกเว้นปุ่มกด ให้ใช้ขนาดปกติ (เพื่อให้ปุ่มไม่ใหญ่จนล้นจอ) */
+        button, .btn-text { font-size: 0.85rem !important; }
+
+        .active-tab { border-bottom: 5px solid #059669; color: #059669; font-weight: 900; }
         .hidden { display: none; }
+        
+        /* ตกแต่งหน้า Stock */
+        .stock-card { border-left: 6px solid #059669; transition: all 0.3s; }
+        .badge-qty { background: #ecfdf5; color: #059669; padding: 2px 12px; border-radius: 999px; border: 1px solid #10b981; }
+        .row-highlight:nth-child(even) { background-color: #f8fafc; }
     </style>
 </head>
-<body class="bg-gray-100 font-sans min-h-screen">
+<body class="bg-slate-50 font-sans min-h-screen text-slate-800">
 
-    <nav class="bg-white shadow-md sticky top-0 z-50">
-        <div class="flex justify-around text-sm uppercase p-3">
-            <button onclick="showPage('in')" id="tab-in" class="py-2 px-4 active-tab transition-all">รับเข้า</button>
-            <button onclick="showPage('out')" id="tab-out" class="py-2 px-4 transition-all">เบิกออก</button>
-            <button onclick="showPage('stock')" id="tab-stock" class="py-2 px-4 transition-all">Stock</button>
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="flex justify-around text-sm font-bold uppercase p-3">
+            <button onclick="showPage('in')" id="tab-in" class="py-2 px-4 active-tab">รับเข้า</button>
+            <button onclick="showPage('out')" id="tab-out" class="py-2 px-4">เบิกออก</button>
+            <button onclick="showPage('stock')" id="tab-stock" class="py-2 px-4">Stock</button>
         </div>
     </nav>
 
-    <div class="max-w-md mx-auto p-4 pb-24">
+    <div class="max-w-md mx-auto p-5 pb-24">
         
-        <section id="page-in" class="space-y-4">
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                <h2 class="text-xl font-bold text-emerald-700 mb-4"><i class="fas fa-download mr-2"></i>บันทึกรับเข้า</h2>
-                <label class="block text-gray-600 text-sm mb-1">ผู้บันทึก</label>
-                <select id="user-in" class="w-full border p-3 rounded-xl bg-gray-50 mb-3 focus:ring-2 ring-emerald-500 outline-none"></select>
-                <label class="block text-gray-600 text-sm mb-1">ชั้นจัดเก็บ</label>
-                <select id="loc-in" class="w-full border p-3 rounded-xl bg-gray-50 focus:ring-2 ring-emerald-500 outline-none"></select>
-                <button onclick="startScan('in')" class="w-full mt-5 bg-emerald-600 hover:bg-emerald-700 text-white p-4 rounded-xl font-bold shadow-lg transition-transform active:scale-95">
-                    <i class="fas fa-qrcode mr-2"></i> สแกน QR Code สินค้า
+        <section id="page-in" class="space-y-5">
+            <div class="bg-white p-6 rounded-3xl shadow-md border border-emerald-100">
+                <h2 class="text-2xl font-black text-emerald-800 mb-5 tracking-tight">📥 รับของเข้า</h2>
+                <label class="block font-semibold mb-1 text-slate-600">ผู้บันทึก</label>
+                <select id="user-in" class="w-full border-2 border-slate-100 p-4 rounded-2xl bg-slate-50 mb-4 focus:border-emerald-500 outline-none"></select>
+                <label class="block font-semibold mb-1 text-slate-600">ชั้นจัดเก็บ</label>
+                <select id="loc-in" class="w-full border-2 border-slate-100 p-4 rounded-2xl bg-slate-50 focus:border-emerald-500 outline-none"></select>
+                <button onclick="startScan('in')" class="w-full mt-6 bg-emerald-600 text-white py-4 rounded-2xl font-extrabold shadow-emerald-200 shadow-lg active:scale-95 transition-transform">
+                    <i class="fas fa-camera mr-2"></i> สแกน QR CODE
                 </button>
             </div>
-            <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
+            <div class="bg-white rounded-3xl shadow-sm overflow-hidden border">
                 <table class="w-full text-left">
-                    <thead class="bg-emerald-50 text-emerald-800"><tr><th class="p-3">รายการที่สแกน</th><th class="p-3 text-center">ลบ</th></tr></thead>
+                    <thead class="bg-emerald-600 text-white"><tr><th class="p-4">รายการ</th><th class="p-4 text-center">ลบ</th></tr></thead>
                     <tbody id="list-in" class="divide-y"></tbody>
                 </table>
             </div>
-            <button onclick="submitData('in')" class="w-full bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-xl font-bold shadow-xl">ยืนยันการรับเข้า</button>
+            <button onclick="submitData('in')" class="w-full bg-slate-800 text-white py-5 rounded-2xl font-bold shadow-xl">ยืนยันการจัดเก็บ</button>
         </section>
 
-        <section id="page-out" class="hidden space-y-4">
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                <h2 class="text-xl font-bold text-orange-700 mb-4"><i class="fas fa-upload mr-2"></i>บันทึกเบิกออก</h2>
-                <label class="block text-gray-600 text-sm mb-1">ผู้บันทึก</label>
-                <select id="user-out" class="w-full border p-3 rounded-xl bg-gray-50 focus:ring-2 ring-orange-500 outline-none"></select>
-                <button onclick="startScan('out')" class="w-full mt-5 bg-orange-500 hover:bg-orange-600 text-white p-4 rounded-xl font-bold shadow-lg transition-transform active:scale-95">
-                    <i class="fas fa-qrcode mr-2"></i> สแกนเพื่อเบิกสินค้า
+        <section id="page-out" class="hidden space-y-5">
+            <div class="bg-white p-6 rounded-3xl shadow-md border border-orange-100">
+                <h2 class="text-2xl font-black text-orange-700 mb-5 tracking-tight">📤 เบิกของออก</h2>
+                <label class="block font-semibold mb-1 text-slate-600">ผู้บันทึก</label>
+                <select id="user-out" class="w-full border-2 border-slate-100 p-4 rounded-2xl bg-slate-50 focus:border-orange-500 outline-none"></select>
+                <button onclick="startScan('out')" class="w-full mt-6 bg-orange-500 text-white py-4 rounded-2xl font-extrabold shadow-orange-200 shadow-lg active:scale-95 transition-transform">
+                    <i class="fas fa-barcode mr-2"></i> สแกนเพื่อเบิก
                 </button>
             </div>
-            <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
+            <div class="bg-white rounded-3xl shadow-sm overflow-hidden border">
                 <table class="w-full text-left">
-                    <thead class="bg-orange-50 text-orange-800"><tr><th class="p-3">รายการที่จะเบิก</th><th class="p-3 text-center">ลบ</th></tr></thead>
+                    <thead class="bg-orange-500 text-white"><tr><th class="p-4">รายการ</th><th class="p-4 text-center">ลบ</th></tr></thead>
                     <tbody id="list-out" class="divide-y"></tbody>
                 </table>
             </div>
-            <button onclick="submitData('out')" class="w-full bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-xl font-bold shadow-xl">ยืนยันการเบิกออก</button>
+            <button onclick="submitData('out')" class="w-full bg-slate-800 text-white py-5 rounded-2xl font-bold shadow-xl">ยืนยันการเบิก</button>
         </section>
 
-        <section id="page-stock" class="hidden space-y-4">
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                <h3 class="font-bold text-lg mb-3 text-gray-800 border-b pb-2">สรุปยอดคงเหลือรวม</h3>
-                <div class="max-h-48 overflow-y-auto">
-                    <table class="w-full text-sm">
-                        <tbody id="stock-summary" class="divide-y"></tbody>
-                    </table>
-                </div>
+        <section id="page-stock" class="hidden animate-fadeIn">
+            <div class="mb-6">
+                <h3 class="text-xl font-black text-slate-800 mb-4 flex items-center">
+                    <span class="bg-emerald-500 w-2 h-8 rounded-full mr-3"></span>
+                    ยอดสรุปคงเหลือ
+                </h3>
+                <div class="grid grid-cols-1 gap-3" id="stock-summary">
+                    </div>
             </div>
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                <h3 class="font-bold text-lg mb-3 text-gray-800">รายละเอียดตำแหน่งคลัง</h3>
-                <label class="block text-gray-500 text-xs mb-1">กรองตามชนิดมะขาม</label>
-                <select id="filter-type" onchange="filterStock()" class="w-full border p-3 rounded-xl bg-gray-50 mb-4 outline-none focus:ring-2 ring-emerald-500"></select>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-center">
-                        <thead class="bg-gray-50 text-gray-600"><tr><th class="p-2">โกดัง</th><th class="p-2">ตำแหน่ง</th><th class="p-2">เหลือ</th></tr></thead>
-                        <tbody id="stock-detail" class="divide-y"></tbody>
+
+            <div class="bg-white p-6 rounded-3xl shadow-lg border border-blue-50">
+                <h3 class="text-xl font-black text-blue-800 mb-4">📍 คลังละเอียด</h3>
+                <div class="mb-4">
+                    <label class="text-xs font-bold text-slate-400 uppercase">กรองชนิดมะขาม</label>
+                    <select id="filter-type" onchange="filterStock()" class="w-full border-2 border-blue-100 p-4 rounded-2xl bg-blue-50 focus:ring-4 ring-blue-100 outline-none"></select>
+                </div>
+                <div class="overflow-hidden rounded-2xl border border-blue-100">
+                    <table class="w-full text-sm">
+                        <thead class="bg-blue-600 text-white font-bold">
+                            <tr><th class="p-4">โกดัง</th><th class="p-4">ตำแหน่ง</th><th class="p-4">คงเหลือ</th></tr>
+                        </thead>
+                        <tbody id="stock-detail" class="text-center divide-y divide-blue-50"></tbody>
                     </table>
                 </div>
             </div>
         </section>
     </div>
 
-    <div id="scanner-modal" class="fixed inset-0 bg-black bg-opacity-95 hidden z-[60] flex flex-col items-center justify-center p-6">
-        <div id="reader" class="w-full max-w-sm rounded-3xl overflow-hidden border-4 border-white"></div>
-        <div class="text-white mt-4 text-center">
-            <p class="text-lg font-bold">กำลังสแกน...</p>
-            <p class="text-sm opacity-70">วาง QR Code ให้อยู่ในกรอบ</p>
-        </div>
-        <button onclick="stopScan()" class="mt-8 bg-red-500 text-white px-10 py-3 rounded-full font-bold shadow-lg">ยกเลิก</button>
+    <div id="scanner-modal" class="fixed inset-0 bg-slate-900/95 hidden z-[60] flex flex-col items-center justify-center p-6">
+        <div id="reader" class="w-full max-w-sm rounded-3xl overflow-hidden border-4 border-white shadow-2xl"></div>
+        <button onclick="stopScan()" class="mt-10 bg-white text-red-600 px-12 py-4 rounded-full font-black shadow-xl">ปิดกล้อง</button>
     </div>
 
     <script>
-        // *** แก้ไข URL ตรงนี้ ***
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwj_UP2p-YueK_zSEEt3bCMuxRo7H-IgxXj9O8cNDk4BL1IG3jGPFJydctKkNZrHSsx8Q/exec"; 
+        // *** แก้ไข URL ของคุณที่นี่ ***
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxvFHioopY6JIpCRZwjaMOdKDs8ddu8-90C1cnrlXnS5Mak8KPBUOVMrih5DOl8yBn8/exec"; 
         
         let scannedItems = { in: [], out: [] };
         let fullStockData = [];
-        let existingStock = []; // ข้อมูลจากคอลัมน์ I ใน Sheet Stock
+        let existingStock = [];
 
         function showPage(page) {
             ['in', 'out', 'stock'].forEach(p => {
@@ -119,70 +131,44 @@
                 fillSelect('user-in', data.users);
                 fillSelect('user-out', data.users);
                 fillSelect('loc-in', data.locations);
-                fillSelect('filter-type', ['ทั้งหมด', ...data.types]);
-                existingStock = data.stockItems; // เก็บรายการ QR ในสต็อก (คอลัมน์ I)
-            } catch(e) { console.error("Load Error", e); }
+                fillSelect('filter-type', ['แสดงทั้งหมด', ...data.types]);
+                existingStock = data.stockItems;
+            } catch(e) { console.error("Error", e); }
         }
 
         function fillSelect(id, items) {
-            const el = document.getElementById(id);
-            el.innerHTML = items.map(i => `<option value="${i}">${i}</option>`).join('');
+            document.getElementById(id).innerHTML = items.map(i => `<option value="${i}">${i}</option>`).join('');
         }
 
         let html5QrCode;
         function startScan(type) {
             document.getElementById('scanner-modal').classList.remove('hidden');
             html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start(
-                { facingMode: "environment" }, 
-                { fps: 15, qrbox: 250 }, 
-                (decodedText) => {
-                    addItem(type, decodedText);
-                    // สแกนต่อได้เลย ไม่ต้องปิดกล้อง เพื่อความรวดเร็ว
-                }
-            ).catch(err => alert("กล้องมีปัญหา: " + err));
+            html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, 
+            (text) => { addItem(type, text); });
         }
 
         function stopScan() {
-            if(html5QrCode) {
-                html5QrCode.stop().then(() => {
-                    document.getElementById('scanner-modal').classList.add('hidden');
-                });
-            } else {
-                document.getElementById('scanner-modal').classList.add('hidden');
-            }
+            if(html5QrCode) html5QrCode.stop().then(() => document.getElementById('scanner-modal').classList.add('hidden'));
         }
 
         function addItem(type, item) {
-            // 1. เช็ครายการซ้ำในตารางปัจจุบัน
             if (scannedItems[type].includes(item)) return;
-
-            // 2. เช็คใน Stock (คอลัมน์ I)
             const inStock = existingStock.includes(item);
-
-            if (type === 'in' && inStock) {
-                alert(`⚠️ มีอยู่ใน Stock แล้ว: ${item}`);
-                return;
-            }
-            if (type === 'out' && !inStock) {
-                alert(`❌ ไม่มีใน Stock: ${item}`);
-                return;
-            }
+            if (type === 'in' && inStock) return alert(`⚠️ มีอยู่ในสต็อกแล้ว (${item})`);
+            if (type === 'out' && !inStock) return alert(`❌ ไม่พบรหัสนี้ในคลัง (${item})`);
 
             scannedItems[type].push(item);
             renderList(type);
-            
-            // สั่นแจ้งเตือนเบาๆ (ถ้ามือถือรองรับ)
-            if (navigator.vibrate) navigator.vibrate(100);
+            if (navigator.vibrate) navigator.vibrate(70);
         }
 
         function renderList(type) {
-            const tbody = document.getElementById(`list-${type}`);
-            tbody.innerHTML = scannedItems[type].map((item, idx) => `
-                <tr class="hover:bg-gray-50">
-                    <td class="p-3 text-gray-700 font-mono text-sm">${item}</td>
-                    <td class="p-3 text-center text-red-400" onclick="removeItem('${type}', ${idx})">
-                        <i class="fas fa-minus-circle fa-lg cursor-pointer"></i>
+            document.getElementById(`list-${type}`).innerHTML = scannedItems[type].map((item, idx) => `
+                <tr class="row-highlight">
+                    <td class="p-4 font-mono text-sm">${item}</td>
+                    <td class="p-4 text-center" onclick="removeItem('${type}', ${idx})">
+                        <i class="fas fa-times-circle text-red-400 text-xl cursor-pointer"></i>
                     </td>
                 </tr>
             `).join('');
@@ -195,47 +181,40 @@
 
         async function submitData(type) {
             const items = scannedItems[type];
-            if(items.length === 0) return alert('ยังไม่ได้สแกนรายการ');
-
-            if(!confirm(`ยืนยันบันทึก ${items.length} รายการ?`)) return;
-
-            const user = document.getElementById(`user-${type}`).value;
-            const location = type === 'in' ? document.getElementById(`loc-in`).value : '';
-
-            // แสดง Loading
+            if(!items.length) return alert('กรุณาสแกนรายการ');
             const btn = event.target;
-            const originalText = btn.innerText;
             btn.disabled = true;
-            btn.innerText = "กำลังบันทึก...";
+            btn.innerHTML = "<i class='fas fa-spinner fa-spin mr-2'></i>กำลังบันทึก...";
 
             try {
-                const res = await fetch(WEB_APP_URL, {
+                await fetch(WEB_APP_URL, {
                     method: 'POST',
-                    mode: 'no-cors', // สำคัญสำหรับการส่งจาก GitHub ไป Apps Script
-                    body: JSON.stringify({ action: type, user, location, items })
+                    mode: 'no-cors',
+                    body: JSON.stringify({ 
+                        action: type, 
+                        user: document.getElementById(`user-${type}`).value, 
+                        location: type === 'in' ? document.getElementById(`loc-in`).value : '',
+                        items 
+                    })
                 });
-                
-                alert('บันทึกข้อมูลเรียบร้อยแล้ว');
+                alert('✅ บันทึกข้อมูลสำเร็จ');
                 scannedItems[type] = [];
                 renderList(type);
-                init(); // รีเฟรชข้อมูลสต็อกเบื้องหลัง
-            } catch(e) {
-                alert('เกิดข้อผิดพลาดในการบันทึก');
-            } finally {
-                btn.disabled = false;
-                btn.innerText = originalText;
-            }
+                init();
+            } catch(e) { alert('ผิดพลาด'); }
+            finally { btn.disabled = false; btn.innerText = type === 'in' ? 'ยืนยันการจัดเก็บ' : 'ยืนยันการเบิก'; }
         }
 
         async function loadStock() {
             const res = await fetch(`${WEB_APP_URL}?action=getStock`);
             const data = await res.json();
             
+            // Render สรุปเป็น Card สวยๆ
             document.getElementById('stock-summary').innerHTML = data.summary.map(r => `
-                <tr class="flex justify-between py-2 border-b border-gray-50">
-                    <td class="text-gray-600">${r[0]}</td>
-                    <td class="font-bold text-emerald-600">${r[1]}</td>
-                </tr>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border-l-8 border-emerald-500 flex justify-between items-center">
+                    <span class="font-bold text-slate-700">${r[0]}</span>
+                    <span class="badge-qty font-black text-lg">${r[1]}</span>
+                </div>
             `).join('');
             
             fullStockData = data.details;
@@ -244,18 +223,16 @@
 
         function filterStock() {
             const val = document.getElementById('filter-type').value;
-            const filtered = val === 'ทั้งหมด' ? fullStockData : fullStockData.filter(r => r[0] === val);
-            
+            const filtered = val === 'แสดงทั้งหมด' ? fullStockData : fullStockData.filter(r => r[0] === val);
             document.getElementById('stock-detail').innerHTML = filtered.map(r => `
-                <tr class="hover:bg-gray-50">
-                    <td class="p-3 text-gray-600">${r[1]}</td>
-                    <td class="p-3 text-gray-600">${r[2]}</td>
-                    <td class="p-3 font-bold text-blue-600">${r[3]}</td>
+                <tr class="row-highlight">
+                    <td class="p-4 text-slate-600 font-medium">${r[1]}</td>
+                    <td class="p-4 text-slate-600">${r[2]}</td>
+                    <td class="p-4 font-black text-blue-600 underline decoration-blue-200">${r[3]}</td>
                 </tr>
             `).join('');
         }
 
-        // เริ่มต้นโหลดข้อมูล
         init();
     </script>
 </body>

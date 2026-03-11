@@ -11,6 +11,9 @@
         /* ปรับขนาดตัวอักษรลดลง 10% จากเดิม 120% เหลือ 110% */
         html { font-size: 110%; }
         
+        /* เพิ่มขนาดตัวอักษรชื่อหน้า (เมนู) ขึ้น 20% */
+        .menu-text { font-size: 1.2rem !important; }
+
         button, .btn-text { font-size: 0.85rem !important; }
 
         .active-tab { border-bottom: 5px solid #059669; color: #059669; font-weight: 900; }
@@ -24,10 +27,10 @@
 <body class="bg-slate-50 font-sans min-h-screen text-slate-800">
 
     <nav class="bg-white shadow-lg sticky top-0 z-50">
-        <div class="flex justify-around text-sm font-bold uppercase p-3">
-            <button onclick="showPage('in')" id="tab-in" class="py-2 px-4 active-tab">รับเข้า</button>
-            <button onclick="showPage('out')" id="tab-out" class="py-2 px-4">เบิกออก</button>
-            <button onclick="showPage('stock')" id="tab-stock" class="py-2 px-4">Stock</button>
+        <div class="flex justify-around font-bold uppercase p-3">
+            <button onclick="showPage('in')" id="tab-in" class="py-2 px-4 active-tab menu-text">รับเข้า</button>
+            <button onclick="showPage('out')" id="tab-out" class="py-2 px-4 menu-text">เบิกออก</button>
+            <button onclick="showPage('stock')" id="tab-stock" class="py-2 px-4 menu-text">Stock</button>
         </div>
     </nav>
 
@@ -44,7 +47,7 @@
                     <i class="fas fa-camera mr-2"></i> สแกน QR CODE
                 </button>
             </div>
-            <div class="bg-white rounded-3xl shadow-sm overflow-hidden border">
+            <div id="container-list-in" class="bg-white rounded-3xl shadow-sm overflow-hidden border hidden">
                 <table class="w-full text-left">
                     <thead class="bg-emerald-600 text-white"><tr><th class="p-4">รายการ</th><th class="p-4 text-center">ลบ</th></tr></thead>
                     <tbody id="list-in" class="divide-y"></tbody>
@@ -62,7 +65,7 @@
                     <i class="fas fa-barcode mr-2"></i> สแกนเพื่อเบิก
                 </button>
             </div>
-            <div class="bg-white rounded-3xl shadow-sm overflow-hidden border">
+            <div id="container-list-out" class="bg-white rounded-3xl shadow-sm overflow-hidden border hidden">
                 <table class="w-full text-left">
                     <thead class="bg-orange-500 text-white"><tr><th class="p-4">รายการ</th><th class="p-4 text-center">ลบ</th></tr></thead>
                     <tbody id="list-out" class="divide-y"></tbody>
@@ -77,8 +80,7 @@
                     <span class="bg-emerald-500 w-2 h-8 rounded-full mr-3"></span>
                     ยอดสรุปคงเหลือ
                 </h3>
-                <div class="grid grid-cols-1 gap-3" id="stock-summary">
-                    </div>
+                <div class="grid grid-cols-1 gap-3" id="stock-summary"></div>
             </div>
 
             <div class="bg-white p-6 rounded-3xl shadow-lg border border-blue-50">
@@ -156,8 +158,6 @@
             if (type === 'out' && !inStock) return alert(`❌ ไม่พบรหัสนี้ในคลัง (${item})`);
 
             scannedItems[type].push(item);
-            
-            // เรียงลำดับรหัสจากน้อยไปมาก
             scannedItems[type].sort((a, b) => a.localeCompare(b, undefined, {numeric: true}));
             
             renderList(type);
@@ -165,7 +165,17 @@
         }
 
         function renderList(type) {
-            document.getElementById(`list-${type}`).innerHTML = scannedItems[type].map((item, idx) => `
+            const container = document.getElementById(`container-list-${type}`);
+            const tbody = document.getElementById(`list-${type}`);
+            
+            // แสดงหรือซ่อนตารางตามจำนวนข้อมูล
+            if (scannedItems[type].length > 0) {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+
+            tbody.innerHTML = scannedItems[type].map((item, idx) => `
                 <tr class="row-highlight">
                     <td class="p-4 font-mono text-sm">${item}</td>
                     <td class="p-4 text-center" onclick="removeItem('${type}', ${idx})">
@@ -224,8 +234,6 @@
         function filterStock() {
             const val = document.getElementById('filter-type').value;
             let filtered = val === 'แสดงทั้งหมด' ? fullStockData : fullStockData.filter(r => r[0] === val);
-            
-            // เรียงชื่อโกดัง (คอลัมน์แรก r[1]) ตามตัวอักษร
             filtered.sort((a, b) => String(a[1]).localeCompare(String(b[1]), 'th'));
 
             document.getElementById('stock-detail').innerHTML = filtered.map(r => `

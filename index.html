@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ศรีแก้ว-คลังมะขาม (GitHub Edition)</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body { background-color: #f4f7f6; padding-bottom: 50px; }
+    .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 9999; justify-content: center; align-items: center; }
+  </style>
+</head>
+<body>
+
+<div id="loader" class="loading-overlay"><div class="spinner-border text-primary"></div></div>
+
+<div class="container mt-4">
+  <h2 class="text-center mb-4 text-success">ศรีแก้ว-คลังมะขาม</h2>
+
+  <ul class="nav nav-tabs nav-justified mb-4" id="mainTab">
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#in">รับเข้า</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#out">เบิกออก</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#stock" onclick="loadStock()">Stock</button></li>
+  </ul>
+
+  <div class="tab-content">
+    <div class="tab-pane fade show active" id="in">
+        <div class="mb-3"><label>ผู้บันทึก</label><select id="userIn" class="form-select user-ddl"></select></div>
+        <div class="mb-3"><label>ชั้นจัดเก็บ</label><select id="locIn" class="form-select storage-ddl"></select></div>
+        <button class="btn btn-primary w-100 mb-3" onclick="startScanner('in')">📷 สแกน QR Code</button>
+        <div id="reader-in"></div>
+        <table class="table mt-3"><tbody id="listIn"></tbody></table>
+        <button class="btn btn-success w-100" onclick="submitData('in')">บันทึกรับเข้า</button>
+    </div>
+
+    <div class="tab-pane fade" id="out">
+        <div class="mb-3"><label>ผู้บันทึก</label><select id="userOut" class="form-select user-ddl"></select></div>
+        <button class="btn btn-primary w-100 mb-3" onclick="startScanner('out')">📷 สแกน QR Code</button>
+        <div id="reader-out"></div>
+        <table class="table mt-3"><tbody id="listOut"></tbody></table>
+        <button class="btn btn-danger w-100" onclick="submitData('out')">บันทึกเบิกออก</button>
+    </div>
+
+    <div class="tab-pane fade" id="stock">
+        <select id="typeFilter" class="form-select mb-3 type-ddl" onchange="loadStock()"></select>
+        <table class="table table-striped">
+            <thead class="table-dark"><tr><th>โกดัง</th><th>ตำแหน่ง</th><th>เหลือ</th></tr></thead>
+            <tbody id="detailBody"></tbody>
+        </table>
+    </div>
+  </div>
+</div>
+
+<script>
+// *** เปลี่ยน URL นี้เป็น Web App URL ของคุณ ***
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz4veD_Dk4s52wh8up5a2GaUpfug90WJEYNcZVWZANTbJSCblXGd0HepuUtCwyroHZFKQ/exec";
+
+let itemsIn = [];
+let itemsOut = [];
+
+window.onload = () => {
+  toggleLoader(true);
+  fetch(`${WEB_APP_URL}?action=getDropdown`)
+    .then(res => res.json())
+    .then(data => {
+      fillSelect('.user-ddl', data.users);
+      fillSelect('.storage-ddl', data.storage);
+      fillSelect('.type-ddl', data.types, "ทั้งหมด");
+      toggleLoader(false);
+    });
+};
+
+function fillSelect(selector, data, firstOption) {
+  const selects = document.querySelectorAll(selector);
+  selects.forEach(s => {
+    s.innerHTML = firstOption ? `<option value="">-- ${firstOption} --</option>` : '';
+    data.forEach(item => s.innerHTML += `<option value="${item}">${item}</option>`);
+  });
+}
+
+async function addItem(mode, qr) {
+    const list = mode === 'in' ? itemsIn : itemsOut;
+    if (list.includes(qr)) return alert("มีในรายการแล้ว");
+
+    toggleLoader(true);
+    const res = await fetch(`${WEB_APP_URL}?action=checkStock&qr=${qr}`);
+    const exists = await res.json();
+    toggleLoader(false);
+
+    if (mode === 'in' && exists) alert("มีอยู่ใน Stock แล้ว");
+    if (mode === 'out' && !exists) alert("ไม่มีใน Stock");
+
+    list.push(qr);
+    renderTable(mode);
+}
+
+async function submitData(mode) {
+    const user = document.getElementById(mode === 'in' ? 'userIn' : 'userOut').value;
+    const loc = mode === 'in' ? document.getElementById('locIn').value : '';
+    const items = mode === 'in' ? itemsIn : itemsOut;
+
+    if (!user || items.length === 0) return alert("ข้อมูลไม่ครบ");
+
+    toggleLoader(true);
+    await fetch(WEB_APP_URL, {
+        method: 'POST',
+        body: JSON.stringify({ mode, user, location: loc, items })
+    });
+    toggleLoader(false);
+    
+    alert("บันทึกสำเร็จ");
+    if (mode === 'in') itemsIn = []; else itemsOut = [];
+    renderTable(mode);
+}
+
+function loadStock() {
+    const type = document.getElementById('typeFilter').value;
+    fetch(`${WEB_APP_URL}?action=getStock&type=${type}`)
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('detailBody').innerHTML = data.details.map(r => 
+                `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
+        });
+}
+
+function toggleLoader(show) { document.getElementById('loader').style.display = show ? 'flex' : 'none'; }
+function renderTable(mode) { /* โค้ดสร้างตารางเหมือนเดิม */ }
+function startScanner(mode) { /* โค้ดสแกนเนอร์เหมือนเดิม */ }
+
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

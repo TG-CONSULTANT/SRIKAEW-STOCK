@@ -8,19 +8,20 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* ปรับขนาดตัวอักษรลง 10% จากเดิม (ตั้งค่าไว้ที่ 110% จากค่าพื้นฐานเบราว์เซอร์) */
+        /* ปรับขนาดตัวอักษรพื้นฐาน (110% จากค่าปกติ) */
         html { font-size: 110%; }
         
+        /* ปุ่มกดขนาดปกติเพื่อความสวยงาม */
         button, .btn-text { font-size: 0.9rem !important; }
 
         .active-tab { border-bottom: 5px solid #059669; color: #059669; font-weight: 900; }
         .hidden { display: none; }
         
-        .stock-card { border-left: 6px solid #059669; }
+        /* ตกแต่งหน้า Stock */
         .badge-qty { background: #ecfdf5; color: #059669; padding: 2px 12px; border-radius: 999px; border: 1px solid #10b981; }
         .row-highlight:nth-child(even) { background-color: #f8fafc; }
 
-        /* Animation เล็กน้อยตอนเปลี่ยนหน้า */
+        /* Animation ตอนเปลี่ยนหน้า */
         .page-fade { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
@@ -78,7 +79,7 @@
         <section id="page-stock" class="hidden page-fade">
             <div class="mb-6">
                 <h3 class="text-lg font-black text-slate-800 mb-4 flex items-center">
-                    <span class="bg-emerald-500 w-2 h-6 rounded-full mr-3"></span> สรุปคงเหลือรวม
+                    <span class="bg-emerald-500 w-2 h-6 rounded-full mr-3"></span> ยอดสรุปคงเหลือรวม
                 </h3>
                 <div class="grid grid-cols-1 gap-3" id="stock-summary"></div>
             </div>
@@ -107,6 +108,7 @@
     </div>
 
     <script>
+        // *** ใส่ URL ของ Web App (Google Apps Script) ที่นี่ ***
         const WEB_APP_URL = "https://script.google.com/macros/library/d/1i0c2ecyk-MLIczxVdmkXfqzRCZICMVIbXpsGpusqtc1TgekxHpGosdtu/12"; 
         
         let scannedItems = { in: [], out: [] };
@@ -158,7 +160,8 @@
             if (type === 'out' && !inStock) return alert(`❌ ไม่พบรหัสนี้ในคลัง (${item})`);
 
             scannedItems[type].push(item);
-            // เรียงลำดับรหัสจากน้อยไปมาก (A-Z, 0-9)
+            
+            // เรียงลำดับรายการที่สแกนจากน้อยไปมาก
             scannedItems[type].sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
             
             renderList(type);
@@ -202,7 +205,7 @@
                 alert('✅ บันทึกข้อมูลสำเร็จ');
                 scannedItems[type] = [];
                 renderList(type);
-                init();
+                init(); // อัปเดตข้อมูลสถานะสต็อกใหม่
             } catch(e) { alert('ผิดพลาด'); }
             finally { btn.disabled = false; btn.innerText = type === 'in' ? 'ยืนยันการจัดเก็บ' : 'ยืนยันการเบิก'; }
         }
@@ -211,6 +214,7 @@
             const res = await fetch(`${WEB_APP_URL}?action=getStock`);
             const data = await res.json();
             
+            // สรุปยอดรวม (แสดงเป็นการ์ด)
             document.getElementById('stock-summary').innerHTML = data.summary.map(r => `
                 <div class="bg-white p-4 rounded-2xl shadow-sm border-l-8 border-emerald-500 flex justify-between items-center">
                     <span class="font-bold text-slate-700">${r[0]}</span>
@@ -226,7 +230,7 @@
             const val = document.getElementById('filter-type').value;
             let filtered = val === 'แสดงทั้งหมด' ? fullStockData : fullStockData.filter(r => r[0] === val);
             
-            // เรียงลำดับข้อมูลในคลังละเอียดตามคอลัมน์แรก (ตัวอักษร)
+            // เรียงลำดับตามตัวอักษรของคอลัมน์แรก
             filtered.sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'th', {sensitivity: 'base'}));
 
             document.getElementById('stock-detail').innerHTML = filtered.map(r => `
@@ -238,6 +242,7 @@
             `).join('');
         }
 
+        // เริ่มต้นโหลดข้อมูลเมื่อเปิดหน้าเว็บ
         init();
     </script>
 </body>

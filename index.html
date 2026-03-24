@@ -7,21 +7,30 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        /* ปรับขนาดตัวอักษรลดลง 10% จากเดิม 120% เหลือ 110% */
-        html { font-size: 110%; }
-        
-        /* เพิ่มขนาดตัวอักษรชื่อหน้า (เมนู) ขึ้น 20% */
-        .menu-text { font-size: 1.2rem !important; }
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.js"></script>
 
+    <style>
+        html { font-size: 110%; } /* ลดขนาดตัวอักษรลง 10% จาก 120% */
+        .menu-text { font-size: 1.2rem !important; } /* เพิ่มขนาดเมนู 20% */
         button, .btn-text { font-size: 0.85rem !important; }
 
         .active-tab { border-bottom: 5px solid #059669; color: #059669; font-weight: 900; }
         .hidden { display: none; }
         
-        .stock-card { border-left: 6px solid #059669; transition: all 0.3s; }
         .badge-qty { background: #ecfdf5; color: #059669; padding: 2px 12px; border-radius: 999px; border: 1px solid #10b981; }
         .row-highlight:nth-child(even) { background-color: #f8fafc; }
+
+        /* ปรับแต่ง Awesomplete ให้สวยงาม */
+        .awesomplete { width: 100%; }
+        .awesomplete > ul { 
+            border-radius: 1rem; 
+            border: 2px solid #f1f5f9; 
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); 
+            background: white;
+            z-index: 100;
+        }
     </style>
 </head>
 <body class="bg-slate-50 font-sans min-h-screen text-slate-800">
@@ -41,8 +50,10 @@
                 <h2 class="text-2xl font-black text-emerald-800 mb-5 tracking-tight">📥 รับของเข้า</h2>
                 <label class="block font-semibold mb-1 text-slate-600">ผู้บันทึก</label>
                 <select id="user-in" class="w-full border-2 border-slate-100 p-4 rounded-2xl bg-slate-50 mb-4 focus:border-emerald-500 outline-none"></select>
-                <label class="block font-semibold mb-1 text-slate-600">ชั้นจัดเก็บ</label>
-                <select id="loc-in" class="w-full border-2 border-slate-100 p-4 rounded-2xl bg-slate-50 focus:border-emerald-500 outline-none"></select>
+                
+                <label class="block font-semibold mb-1 text-slate-600">ชั้นจัดเก็บ (พิมพ์เพื่อค้นหา)</label>
+                <input id="loc-in" class="w-full border-2 border-slate-100 p-4 rounded-2xl bg-slate-50 focus:border-emerald-500 outline-none" placeholder="เลือกชั้นจัดเก็บ..." />
+                
                 <button onclick="startScan('in')" class="w-full mt-6 bg-emerald-600 text-white py-4 rounded-2xl font-extrabold shadow-emerald-200 shadow-lg active:scale-95 transition-transform">
                     <i class="fas fa-camera mr-2"></i> สแกน QR CODE
                 </button>
@@ -84,7 +95,7 @@
             </div>
 
             <div class="bg-white p-6 rounded-3xl shadow-lg border border-blue-50">
-                <h3 class="text-xl font-black text-blue-800 mb-4">แยกตามคลังจัดเก็บ</h3>
+                <h3 class="text-xl font-black text-blue-800 mb-4">📍 คลังละเอียด</h3>
                 <div class="mb-4">
                     <label class="text-xs font-bold text-slate-400 uppercase">กรองชนิดมะขาม</label>
                     <select id="filter-type" onchange="filterStock()" class="w-full border-2 border-blue-100 p-4 rounded-2xl bg-blue-50 focus:ring-4 ring-blue-100 outline-none"></select>
@@ -107,11 +118,12 @@
     </div>
 
     <script>
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxvFHioopY6JIpCRZwjaMOdKDs8ddu8-90C1cnrlXnS5Mak8KPBUOVMrih5DOl8yBn8/exec"; 
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwhMYBP1hZZjkiVx3GS6JwZ_VucYEd87EwK0i7Zt7V7zGqlxkfw4C2ul9w6Zlg2WKZ30A/exec"; 
         
         let scannedItems = { in: [], out: [] };
         let fullStockData = [];
         let existingStock = [];
+        let aweIn; // Awesomplete object
 
         function showPage(page) {
             ['in', 'out', 'stock'].forEach(p => {
@@ -129,9 +141,22 @@
                 const data = await res.json();
                 fillSelect('user-in', data.users);
                 fillSelect('user-out', data.users);
-                fillSelect('loc-in', data.locations);
                 fillSelect('filter-type', ['แสดงทั้งหมด', ...data.types]);
                 existingStock = data.stockItems;
+
+                // ตั้งค่าระบบพิมพ์นำ (Awesomplete)
+                const locInput = document.getElementById('loc-in');
+                aweIn = new Awesomplete(locInput, {
+                    list: data.locations,
+                    minChars: 0,
+                    maxItems: 15,
+                    autoFirst: true
+                });
+                locInput.addEventListener("click", () => {
+                    if (aweIn.ul.childNodes.length > 0 && aweIn.ul.hidden) {
+                        aweIn.evaluate(); aweIn.open();
+                    }
+                });
             } catch(e) { console.error("Error", e); }
         }
 
@@ -158,6 +183,7 @@
             if (type === 'out' && !inStock) return alert(`❌ ไม่พบรหัสนี้ในคลัง (${item})`);
 
             scannedItems[type].push(item);
+            // เรียงลำดับรหัสสินค้าจากน้อยไปมาก
             scannedItems[type].sort((a, b) => a.localeCompare(b, undefined, {numeric: true}));
             
             renderList(type);
@@ -168,7 +194,7 @@
             const container = document.getElementById(`container-list-${type}`);
             const tbody = document.getElementById(`list-${type}`);
             
-            // แสดงหรือซ่อนตารางตามจำนวนข้อมูล
+            // แสดงตารางเมื่อมีข้อมูลเท่านั้น
             if (scannedItems[type].length > 0) {
                 container.classList.remove('hidden');
             } else {
@@ -210,6 +236,7 @@
                 });
                 alert('✅ บันทึกข้อมูลสำเร็จ');
                 scannedItems[type] = [];
+                if(type === 'in') document.getElementById('loc-in').value = '';
                 renderList(type);
                 init();
             } catch(e) { alert('ผิดพลาด'); }
@@ -219,14 +246,12 @@
         async function loadStock() {
             const res = await fetch(`${WEB_APP_URL}?action=getStock`);
             const data = await res.json();
-            
             document.getElementById('stock-summary').innerHTML = data.summary.map(r => `
                 <div class="bg-white p-4 rounded-2xl shadow-sm border-l-8 border-emerald-500 flex justify-between items-center">
                     <span class="font-bold text-slate-700">${r[0]}</span>
                     <span class="badge-qty font-black text-lg">${r[1]}</span>
                 </div>
             `).join('');
-            
             fullStockData = data.details;
             filterStock();
         }
@@ -234,6 +259,8 @@
         function filterStock() {
             const val = document.getElementById('filter-type').value;
             let filtered = val === 'แสดงทั้งหมด' ? fullStockData : fullStockData.filter(r => r[0] === val);
+            
+            // เรียงชื่อโกดังตามตัวอักษร
             filtered.sort((a, b) => String(a[1]).localeCompare(String(b[1]), 'th'));
 
             document.getElementById('stock-detail').innerHTML = filtered.map(r => `
